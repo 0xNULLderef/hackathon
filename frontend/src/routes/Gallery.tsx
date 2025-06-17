@@ -1,6 +1,6 @@
 const Gallery = () => {
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-100 dark:bg-gray-800 text-black dark:text-white p-4">
+    <div className="flex flex-col items-center min-h-screen bg-gray-100 dark:bg-slate-900 text-black dark:text-white p-4">
       <h2 className="text-2xl font-bold mb-6">Twoje znaleziska</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
