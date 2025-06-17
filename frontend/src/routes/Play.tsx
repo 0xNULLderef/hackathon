@@ -67,6 +67,7 @@ const Play = () => {
               onCheckShouldStop={(similarity) => {
                 if (similarity >= imageData.minSimilarity) {
                   // set the flag here...
+                  alert('WYGRAŁEŚ')
                   return true
                 } else {
                   return false
