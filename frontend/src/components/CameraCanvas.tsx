@@ -1,21 +1,12 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type HTMLProps } from 'react'
 import { useGL } from '../hooks/useGL'
-import 'rvfc-polyfill'
 import { FilesetResolver, ImageEmbedder } from '@mediapipe/tasks-vision'
 import { useCamera } from '../hooks/useCamera'
 
-interface GLTexture {
-  texture: WebGLTexture
-  width: number
-  height: number
-}
-
-interface GLContext {
-  gl: WebGL2RenderingContext
-  textures: {
-    camera: GLTexture
-  }
-  delta: number
+interface Props extends HTMLProps<HTMLDivElement> {
+  targetURL: string
+  onSimilarityUpdate: (similarity: number) => void
+  onCheckShouldStop: (similarity: number) => boolean
 }
 
 interface GLProgram {
@@ -23,7 +14,7 @@ interface GLProgram {
   uniforms: { [key: string]: WebGLUniformLocation }
 }
 
-const vertex = `
+const screenSpaceTriangleVertex = `
 #version 300 es
 
 out vec2 vTextureCoord;
@@ -35,12 +26,49 @@ void main(void) {
 }
 `.trim()
 
-const fragment = `
+// https://www.shadertoy.com/view/Xdf3Rf
+const imageProcessFragment = `
+#version 300 es
+precision highp float;
+
+uniform sampler2D uImageSampler;
+
+in vec2 vTextureCoord;
+
+layout(location = 0) out vec4 oColor;
+
+float intensity(in vec4 color){
+  return sqrt((color.x*color.x)+(color.y*color.y)+(color.z*color.z));
+}
+
+void main(void) {
+  vec2 center = vTextureCoord;
+  
+  // HACK
+  float stepx = 1.0/512.0;
+  float stepy = 1.0/512.0;
+
+  float tleft = intensity(texture(uImageSampler,center + vec2(-stepx,stepy)));
+  float left = intensity(texture(uImageSampler,center + vec2(-stepx,0)));
+  float bleft = intensity(texture(uImageSampler,center + vec2(-stepx,-stepy)));
+  float top = intensity(texture(uImageSampler,center + vec2(0,stepy)));
+  float bottom = intensity(texture(uImageSampler,center + vec2(0,-stepy)));
+  float tright = intensity(texture(uImageSampler,center + vec2(stepx,stepy)));
+  float right = intensity(texture(uImageSampler,center + vec2(stepx,0)));
+  float bright = intensity(texture(uImageSampler,center + vec2(stepx,-stepy)));
+  float x = tleft + 2.0*left + bleft - tright - 2.0*right - bright;
+  float y = -tleft - 2.0*top - tright + bleft + 2.0 * bottom + bright;
+  float color = sqrt((x*x) + (y*y));
+
+  oColor = vec4(vec3(color), 1.0);
+}
+`.trim()
+
+const cameraRescaleFragment = `
 #version 300 es
 precision highp float;
 
 uniform sampler2D uVideoSampler;
-uniform sampler2D uImageSampler;
 
 uniform vec2 uVideoShift;
 uniform vec2 uVideoScale;
@@ -51,9 +79,33 @@ layout(location = 0) out vec4 oColor;
 
 void main(void) {
   vec3 videoColor = texture(uVideoSampler, (vTextureCoord + uVideoShift) * uVideoScale).rgb;
-  vec3 imageColor = texture(uImageSampler, vTextureCoord * vec2(1.0, -1.0)).rgb;
-  oColor = vec4(videoColor * 0.5 + max(videoColor * 0.5, imageColor * 0.5), 1.0);
-  // oColor = vec4(imageColor, 1.0);
+  oColor = vec4(videoColor, 1.0);
+}
+`.trim()
+
+const cameraOverlayFragment = `
+#version 300 es
+precision highp float;
+
+uniform sampler2D uVideoSampler;
+uniform sampler2D uImageSampler;
+
+uniform vec2 uVideoShift;
+uniform vec2 uVideoScale;
+
+uniform float uTimeLoop;
+
+in vec2 vTextureCoord;
+
+layout(location = 0) out vec4 oColor;
+
+void main(void) {
+  // vec3 videoColor = vec3(1.0, 0.0, 1.0);
+  float d = length(vTextureCoord * 2.0 - vec2(1.0));
+  float df = min(abs((uTimeLoop - 0.5) * 4.0 - d) + 0.6, 1.0);
+  vec3 videoColor = texture(uVideoSampler, (vTextureCoord + uVideoShift) * uVideoScale).rgb;
+  vec3 imageColor = texture(uImageSampler, vTextureCoord * vec2(1.0, -1.0)).rgb * df;
+  oColor = vec4(max(videoColor, imageColor), 1.0);
 }
 `.trim()
 
@@ -146,12 +198,26 @@ const calculateVideoTransform = (video: HTMLVideoElement) => {
   }
 }
 
-const setup = async (
-  gl: WebGL2RenderingContext,
-  image: HTMLImageElement,
-  video: HTMLVideoElement,
-  callback: (x: any) => void
-) => {
+const run = async ({
+  gl,
+  renderCanvas,
+  embeddingCanvas,
+  targetImage,
+  cameraVideo,
+  similarityCallback,
+  checkShouldStopCallback,
+}: {
+  gl: WebGL2RenderingContext
+  renderCanvas: HTMLCanvasElement
+  embeddingCanvas: HTMLCanvasElement
+  targetImage: HTMLImageElement
+  cameraVideo: HTMLVideoElement
+  similarityCallback: (similarity: number) => void
+  checkShouldStopCallback: (similarity: number) => boolean
+}) => {
+  const embeddingCanvas2DContext = embeddingCanvas.getContext('2d')
+  if (!embeddingCanvas2DContext) throw new Error('damn')
+
   const filesetResolver = await FilesetResolver.forVisionTasks('/wasm')
   const imageEmbedder = await ImageEmbedder.createFromOptions(filesetResolver, {
     baseOptions: {
@@ -160,15 +226,90 @@ const setup = async (
     runningMode: 'IMAGE',
   })
 
-  const targetEmbedding = imageEmbedder.embed(image).embeddings[0]
+  const targetEmbedding = imageEmbedder.embed(targetImage).embeddings[0]
 
   imageEmbedder.setOptions({ runningMode: 'VIDEO' })
+
+  const imageProcessProgram = compileProgram(
+    gl,
+    screenSpaceTriangleVertex,
+    imageProcessFragment
+  )
+  const cameraRescaleProgram = compileProgram(
+    gl,
+    screenSpaceTriangleVertex,
+    cameraRescaleFragment
+  )
+  const cameraOverlayProgram = compileProgram(
+    gl,
+    screenSpaceTriangleVertex,
+    cameraOverlayFragment
+  )
+
+  // dummy ibo for screenspace tris
+  const indexBuffer = gl.createBuffer()
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+  gl.bufferData(
+    gl.ELEMENT_ARRAY_BUFFER,
+    new Uint8Array([0, 1, 2]),
+    gl.STATIC_DRAW
+  )
 
   const imageTexture = gl.createTexture()
   if (!imageTexture) throw new Error('failed to create image texture')
   gl.bindTexture(gl.TEXTURE_2D, imageTexture)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    targetImage
+  )
+  // don't need mips
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+  const imageProcessedTexture = gl.createTexture()
+  if (!imageProcessedTexture)
+    throw new Error('failed to create processed image texture')
+  gl.bindTexture(gl.TEXTURE_2D, imageProcessedTexture)
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    512,
+    512,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    null
+  )
+  const imageProcessedFramebuffer = gl.createFramebuffer()
+  gl.bindFramebuffer(gl.FRAMEBUFFER, imageProcessedFramebuffer)
+  gl.framebufferTexture2D(
+    gl.FRAMEBUFFER,
+    gl.COLOR_ATTACHMENT0,
+    gl.TEXTURE_2D,
+    imageProcessedTexture,
+    0
+  )
+
+  gl.useProgram(imageProcessProgram.program)
+  gl.activeTexture(gl.TEXTURE0)
+  gl.bindTexture(gl.TEXTURE_2D, imageTexture)
+  gl.uniform1i(imageProcessProgram.uniforms['uImageSampler'], 0)
+
+  gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 0)
+
+  gl.deleteFramebuffer(imageProcessedFramebuffer)
+
+  gl.bindTexture(gl.TEXTURE_2D, imageProcessedTexture)
   gl.generateMipmap(gl.TEXTURE_2D)
+
+  // restore fb
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
   const videoTexture = gl.createTexture()
   if (!videoTexture) throw new Error('failed to create video texture')
@@ -186,119 +327,164 @@ const setup = async (
   )
   gl.generateMipmap(gl.TEXTURE_2D)
 
-  const indexBuffer = gl.createBuffer()
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
-  gl.bufferData(
-    gl.ELEMENT_ARRAY_BUFFER,
-    new Uint8Array([0, 1, 2]),
-    gl.STATIC_DRAW
-  )
-
-  const program = compileProgram(gl, vertex, fragment)
   let framecnt = 0
+  const FRAMECNT_RUN_MODEL = 10
+  let similaritySave = 0
 
   let videoTransform = null
 
-  const frame = async () => {
-    videoTransform ??= calculateVideoTransform(video)
+  const frame = async (now: number) => {
+    videoTransform ??= calculateVideoTransform(cameraVideo)
 
     gl.bindTexture(gl.TEXTURE_2D, videoTexture)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video)
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      cameraVideo
+    )
     gl.generateMipmap(gl.TEXTURE_2D)
+
+    gl.useProgram(cameraRescaleProgram.program)
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0)
     gl.clear(gl.COLOR_BUFFER_BIT)
 
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, videoTexture)
-    gl.uniform1i(program.uniforms['uVideoSampler'], 0)
-
-    gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, imageTexture)
-    gl.uniform1i(program.uniforms['uImageSampler'], 1)
+    gl.uniform1i(cameraRescaleProgram.uniforms['uVideoSampler'], 0)
 
     gl.uniform2f(
-      program.uniforms['uVideoShift'],
+      cameraRescaleProgram.uniforms['uVideoShift'],
       videoTransform.shift[0],
       videoTransform.shift[1]
     )
 
     gl.uniform2f(
-      program.uniforms['uVideoScale'],
+      cameraRescaleProgram.uniforms['uVideoScale'],
       videoTransform.scale[0],
       videoTransform.scale[1]
     )
 
-    gl.useProgram(program.program)
     gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 0)
 
-    if (framecnt++ == 60) {
-      framecnt = 0
-      ;(async () => {
-        const currentEmbedding = imageEmbedder.embedForVideo(
-          gl.canvas,
-          performance.now()
-        ).embeddings[0]
-
-        const similarity = ImageEmbedder.cosineSimilarity(
-          targetEmbedding,
-          currentEmbedding
-        )
-
-        callback(similarity)
-      })()
+    if (framecnt == FRAMECNT_RUN_MODEL) {
+      embeddingCanvas2DContext.drawImage(renderCanvas, 0, 0)
     }
 
-    requestAnimationFrame(frame)
+    gl.useProgram(cameraOverlayProgram.program)
+
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, videoTexture)
+    gl.uniform1i(cameraOverlayProgram.uniforms['uVideoSampler'], 0)
+
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, imageProcessedTexture)
+    gl.uniform1i(cameraOverlayProgram.uniforms['uImageSampler'], 1)
+
+    gl.uniform2f(
+      cameraOverlayProgram.uniforms['uVideoShift'],
+      videoTransform.shift[0],
+      videoTransform.shift[1]
+    )
+
+    gl.uniform2f(
+      cameraOverlayProgram.uniforms['uVideoScale'],
+      videoTransform.scale[0],
+      videoTransform.scale[1]
+    )
+
+    gl.uniform1f(
+      cameraOverlayProgram.uniforms['uTimeLoop'],
+      (now / 2000.0) % 1.0
+    )
+
+    gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 0)
+
+    if (framecnt++ == FRAMECNT_RUN_MODEL) {
+      framecnt = 0
+      const currentEmbedding = imageEmbedder.embedForVideo(
+        embeddingCanvas,
+        performance.now()
+      ).embeddings[0]
+
+      const similarity = ImageEmbedder.cosineSimilarity(
+        targetEmbedding,
+        currentEmbedding
+      )
+
+      similarityCallback(similarity)
+      similaritySave = similarity
+    }
+
+    if (!checkShouldStopCallback(similaritySave)) requestAnimationFrame(frame)
   }
 
   requestAnimationFrame(frame)
 }
 
-const CameraCanvas = () => {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const imageRef = useRef<HTMLImageElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+const CameraCanvas = ({
+  targetURL,
+  onSimilarityUpdate,
+  onCheckShouldStop,
+  ...props
+}: Props) => {
+  if (!onSimilarityUpdate) throw new Error('no similarity callback')
+  if (!onCheckShouldStop) throw new Error('no similarity callback')
 
-  const gl = useGL({ canvasRef })
+  const cameraVideoRef = useRef<HTMLVideoElement>(null)
+  const targetImageRef = useRef<HTMLImageElement>(null)
+  const embeddingCanvasRef = useRef<HTMLCanvasElement>(null)
+  const renderCanvasRef = useRef<HTMLCanvasElement>(null)
 
-  const [embedding, setEmbedding] = useState<string>('')
-
-  const target = 'target.png'
+  const gl = useGL({ canvasRef: renderCanvasRef })
 
   useEffect(() => {
-    const image = imageRef.current
-    const video = videoRef.current
-    if (gl && image && video) {
+    const targetImage = targetImageRef.current
+    const renderCanvas = renderCanvasRef.current
+    const embeddingCanvas = embeddingCanvasRef.current
+    const cameraVideo = cameraVideoRef.current
+
+    if (gl && renderCanvas && embeddingCanvas && targetImage && cameraVideo) {
       ;(async () => {
         const camera = await useCamera()
-        console.log(video)
-        video.srcObject = camera
-        video.playsInline = true
-        video.muted = true
-        video.play()
+        cameraVideo.srcObject = camera
+        cameraVideo.playsInline = true
+        cameraVideo.muted = true
+        cameraVideo.play()
 
-        setup(gl, image, video, (e) => setEmbedding(e))
+        run({
+          gl,
+          renderCanvas,
+          embeddingCanvas,
+          targetImage,
+          cameraVideo,
+          similarityCallback: onSimilarityUpdate,
+          checkShouldStopCallback: onCheckShouldStop,
+        })
       })()
     }
-  }, [gl, imageRef, videoRef])
+  }, [gl, targetImageRef, cameraVideoRef])
 
   return (
-    <>
+    <div {...props}>
       <div
         style={{
           position: 'absolute',
           width: '1px',
           height: '1px',
           overflow: 'hidden',
+          opacity: 0.01,
         }}
       >
-        <img ref={imageRef} src={target} />
-        <video controls ref={videoRef} />
+        <img ref={targetImageRef} src={targetURL} />
+        <video controls ref={cameraVideoRef} />
+        <canvas width={512} height={512} ref={embeddingCanvasRef} />
       </div>
-      <canvas width={512} height={512} ref={canvasRef} />
-      <p>{embedding}</p>
-    </>
+      <canvas width={512} height={512} ref={renderCanvasRef} />
+    </div>
   )
 }
 

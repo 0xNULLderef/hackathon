@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useState } from 'react'
 
 const Upload = () => {
-  const [value, setValue] = useState(0);
-  const [isSent, setIsSent] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false); // Dodane do obsługi menu
+  const [value, setValue] = useState(0)
+  const [isSent, setIsSent] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false) // Dodane do obsługi menu
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-850 text-black dark:text-white relative">
-
       {/* Przycisk menu mobilnego */}
       <button
         onClick={() => setMenuOpen(!menuOpen)}
@@ -19,14 +18,30 @@ const Upload = () => {
       {/* Nawigacja boczna */}
       <div
         className={`fixed top-0 left-0 h-full w-64 bg-gray-900 shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${
-          menuOpen ? "translate-x-0" : "-translate-x-full"
+          menuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <ul className="p-14 space-y-6 text-white">
-          <li><a href="/home" className="">Strona główna</a></li>
-          <li><a href="/gallery" className="">Znaleziska</a></li>
-          <li><a href="/ranking" className="">Ranking</a></li>
-          <li><a href="/achievements" className="">Osiągnięcia</a></li>
+          <li>
+            <a href="/home" className="">
+              Strona główna
+            </a>
+          </li>
+          <li>
+            <a href="/gallery" className="">
+              Znaleziska
+            </a>
+          </li>
+          <li>
+            <a href="/ranking" className="">
+              Ranking
+            </a>
+          </li>
+          <li>
+            <a href="/achievements" className="">
+              Osiągnięcia
+            </a>
+          </li>
         </ul>
       </div>
 
@@ -55,9 +70,11 @@ const Upload = () => {
         Prześlij
       </button>
 
-      {isSent && <h4 className="mt-4 text-green-500">Plik został przesłany!</h4>}
+      {isSent && (
+        <h4 className="mt-4 text-green-500">Plik został przesłany!</h4>
+      )}
     </div>
-  );
-};
+  )
+}
 
-export default Upload;
+export default Upload
