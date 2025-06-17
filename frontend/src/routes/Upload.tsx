@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react'
 
 const Upload = () => {
   const [value, setValue] = useState(0);
@@ -35,7 +35,7 @@ const Upload = () => {
         {isSent && <h4 className="text-green-500 text-center">Plik został przesłany!</h4>}
       </div>
     </div>
-  );
-};
+  )
+}
 
 export default Upload;

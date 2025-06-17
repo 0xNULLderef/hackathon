@@ -97,4 +97,4 @@ const Achievments = () => {
   );
 };
 
-export default Achievments;
+export default Achievments
