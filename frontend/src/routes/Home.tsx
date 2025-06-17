@@ -1,45 +1,66 @@
 import { useState } from "react";
+import CameraComponent from "../components/CameraComponent";
 
 const Home = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+
+  const imageData = JSON.parse(
+    '{"src": "/src/asetts/IMG_20250617_121813889_HDR.jpg", "accuracy": "92%"}'
+  );
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-800 text-black dark:text-white relative">
-      
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-850 text-white relative">
+
       {}
-      <button onClick={() => setMenuOpen(!menuOpen)} className="absolute top-4 left-4 p-2 bg-blue-500 rounded text-white md:hidden">
+      <button
+        onClick={() => setMenuOpen(!menuOpen)}
+        className="absolute top-4 left-4 p-2 bg-gray-800 rounded text-white md:hidden z-50"
+      >
         ☰
       </button>
 
       {}
-      {menuOpen && (
-        <div className="absolute top-12 left-4 bg-white dark:bg-gray-700 shadow-md rounded-lg p-4 text-black dark:text-white">
-          <ul className="flex flex-col space-y-2">
-            <li><a href="/home" className="hover:text-blue-500">Strona główna</a></li>
-            <li><a href="/upload" className="hover:text-blue-500">Upload Page</a></li>
-            <li><a href="/gallery" className="hover:text-blue-500">Znaleziska</a></li>
-            <li><a href="/ranking" className="hover:text-blue-500">Ranking</a></li>
-            <li><a href="/achievements" className="hover:text-blue-500">Osiągnięcia</a></li>
-          </ul>
-        </div>
-      )}
+      <div
+        className={`fixed top-0 left-0 h-full w-64 bg-gray-900 shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${
+          menuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <ul className="pt-20 ps-5 space-y-6 text-white">
+          <li><a href="/home" className="">Strona główna</a></li>
+          <li><a href="/gallery" className="">Znaleziska</a></li>
+          <li><a href="/ranking" className="">Ranking</a></li>
+          <li><a href="/achievements" className="">Osiągnięcia</a></li>
+        </ul>
+      </div>
 
       {}
-      <img
-        src="/src/assets/IMG_20250617_121752980_HDR.jpg"
-        alt="Obraz"
-        className="w-full max-w-md rounded-lg shadow-md mt-4"
-      />
+      <div className="relative w-full max-w-md mt-4">
+        <img
+          src={imageData.src}
+          alt="Obraz"
+          className="w-full rounded-lg shadow-md"
+        />
+        <span className="absolute top-2 left-2 bg-opacity-60 text-white text-sm px-2 py-1 rounded">
+          Dokładność: {imageData.accuracy}
+        </span>
+      </div>
 
       {}
       <button
         onClick={() => setIsVisible(!isVisible)}
-        className="w-full max-w-md py-2 mt-4 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800">
+        className="w-full max-w-md py-2 mt-4 bg-gray-800 rounded"
+      >
         Podgląd
       </button>
 
-      {isVisible && <h4 className="mt-4 text-lg text-gray-700">Treść podglądu...</h4>}
+      {}
+      {isVisible && (
+        <h4 className="mt-4 text-lg text-gray-300">
+          Treść podglądu...
+        </h4>
+      )}
     </div>
   );
 };

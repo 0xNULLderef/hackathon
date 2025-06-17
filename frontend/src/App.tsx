@@ -3,6 +3,8 @@ import Test from './routes/Test'
 import Home from './routes/Home'
 import Upload from './routes/Upload'
 import Gallery from './routes/Gallery'
+import Ranking from './routes/Ranking'
+import Achievments from './routes/Achievments'
 
 function App() {
   return (
@@ -13,6 +15,8 @@ function App() {
           <Route path="/home" Component={Home} />
           <Route path="/upload" Component={Upload} />
           <Route path="/gallery" Component={Gallery} />
+          <Route path="/ranking" Component={Ranking} />
+          <Route path="/achievments" Component={Achievments} />
         </Routes>
       </BrowserRouter>
     </>
