@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useGL } from '../hooks/useGL'
 import 'rvfc-polyfill'
 import { FilesetResolver, ImageEmbedder } from '@mediapipe/tasks-vision'
+import { useCamera } from '../hooks/useCamera'
 
 interface GLTexture {
   texture: WebGLTexture
@@ -38,16 +39,21 @@ const fragment = `
 #version 300 es
 precision highp float;
 
-uniform vec2 uShift;
-uniform vec2 uScale;
-uniform sampler2D uSampler;
+uniform sampler2D uVideoSampler;
+uniform sampler2D uImageSampler;
+
+uniform vec2 uVideoShift;
+uniform vec2 uVideoScale;
 
 in vec2 vTextureCoord;
 
 layout(location = 0) out vec4 oColor;
 
 void main(void) {
-  oColor = vec4(texture(uSampler, (vTextureCoord + uShift) * uScale).rgb, 1.0);
+  vec3 videoColor = texture(uVideoSampler, (vTextureCoord + uVideoShift) * uVideoScale).rgb;
+  vec3 imageColor = texture(uImageSampler, vTextureCoord * vec2(1.0, -1.0)).rgb;
+  oColor = vec4(videoColor * 0.5 + max(videoColor * 0.5, imageColor * 0.5), 1.0);
+  // oColor = vec4(imageColor, 1.0);
 }
 `.trim()
 
@@ -125,31 +131,48 @@ const compileProgram = (
   return { program, uniforms }
 }
 
-const setup = async (gl: WebGL2RenderingContext, image: HTMLImageElement, video: HTMLVideoElement, callback: (x: any) => void) => {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: { width: 720, height: 720, facingMode: 'environment' },
-  })
+const calculateVideoTransform = (video: HTMLVideoElement) => {
+  const aspect = video.videoWidth / video.videoHeight
+  if (aspect > 1.0) {
+    return {
+      shift: [(aspect - 1.0) / 2.0, 0.0],
+      scale: [1.0 / aspect, -1.0],
+    }
+  } else {
+    return {
+      shift: [0.0, (1.0 / aspect - 1.0) / 2.0],
+      scale: [1.0, -aspect],
+    }
+  }
+}
 
-  const filesetResolver = await FilesetResolver.forVisionTasks(
-    '/wasm'
-  )
+const setup = async (
+  gl: WebGL2RenderingContext,
+  image: HTMLImageElement,
+  video: HTMLVideoElement,
+  callback: (x: any) => void
+) => {
+  const filesetResolver = await FilesetResolver.forVisionTasks('/wasm')
   const imageEmbedder = await ImageEmbedder.createFromOptions(filesetResolver, {
     baseOptions: {
-      modelAssetPath:
-        '/models/mobilenet_v3_small.tflite',
+      modelAssetPath: '/models/mobilenet_v3_small.tflite',
     },
     runningMode: 'IMAGE',
   })
-  
+
   const targetEmbedding = imageEmbedder.embed(image).embeddings[0]
 
   imageEmbedder.setOptions({ runningMode: 'VIDEO' })
 
-
+  const imageTexture = gl.createTexture()
+  if (!imageTexture) throw new Error('failed to create image texture')
+  gl.bindTexture(gl.TEXTURE_2D, imageTexture)
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+  gl.generateMipmap(gl.TEXTURE_2D)
 
   const videoTexture = gl.createTexture()
   if (!videoTexture) throw new Error('failed to create video texture')
+  gl.bindTexture(gl.TEXTURE_2D, videoTexture)
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
@@ -163,10 +186,6 @@ const setup = async (gl: WebGL2RenderingContext, image: HTMLImageElement, video:
   )
   gl.generateMipmap(gl.TEXTURE_2D)
 
-  video.srcObject = stream
-  video.muted = true
-  video.play()
-
   const indexBuffer = gl.createBuffer()
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
   gl.bufferData(
@@ -178,14 +197,10 @@ const setup = async (gl: WebGL2RenderingContext, image: HTMLImageElement, video:
   const program = compileProgram(gl, vertex, fragment)
   let framecnt = 0
 
+  let videoTransform = null
+
   const frame = async () => {
-    const aspect = video.videoWidth / video.videoHeight
-    const [shiftX, shiftY] =
-      aspect > 1.0
-        ? [(aspect - 1.0) / 2.0, 0.0]
-        : [0.0, (1.0 / aspect - 1.0) / 2.0]
-    const [scaleX, scaleY] =
-      aspect > 1.0 ? [1.0 / aspect, -1.0] : [1.0, -aspect]
+    videoTransform ??= calculateVideoTransform(video)
 
     gl.bindTexture(gl.TEXTURE_2D, videoTexture)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video)
@@ -196,46 +211,80 @@ const setup = async (gl: WebGL2RenderingContext, image: HTMLImageElement, video:
 
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, videoTexture)
-    gl.uniform1i(program.uniforms['uSampler'], 0)
-    gl.uniform2f(program.uniforms['uShift'], shiftX, shiftY)
-    gl.uniform2f(program.uniforms['uScale'], scaleX, scaleY)
+    gl.uniform1i(program.uniforms['uVideoSampler'], 0)
+
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, imageTexture)
+    gl.uniform1i(program.uniforms['uImageSampler'], 1)
+
+    gl.uniform2f(
+      program.uniforms['uVideoShift'],
+      videoTransform.shift[0],
+      videoTransform.shift[1]
+    )
+
+    gl.uniform2f(
+      program.uniforms['uVideoScale'],
+      videoTransform.scale[0],
+      videoTransform.scale[1]
+    )
 
     gl.useProgram(program.program)
     gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 0)
 
-    if (framecnt++ == 6) {
+    if (framecnt++ == 60) {
       framecnt = 0
-      const currentEmbedding = imageEmbedder.embedForVideo(gl.canvas, performance.now()).embeddings[0]
+      ;(async () => {
+        const currentEmbedding = imageEmbedder.embedForVideo(
+          gl.canvas,
+          performance.now()
+        ).embeddings[0]
 
-      const similarity = ImageEmbedder.cosineSimilarity(targetEmbedding, currentEmbedding)
-      console.log(similarity)
+        const similarity = ImageEmbedder.cosineSimilarity(
+          targetEmbedding,
+          currentEmbedding
+        )
+
+        callback(similarity)
+      })()
     }
 
-    video.requestVideoFrameCallback(frame)
+    requestAnimationFrame(frame)
   }
 
-  video.requestVideoFrameCallback(frame)
+  requestAnimationFrame(frame)
 }
 
 const CameraCanvas = () => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
   const gl = useGL({ canvasRef })
+
   const [embedding, setEmbedding] = useState<string>('')
 
   const target = 'target.png'
 
   useEffect(() => {
-    if (gl && imageRef.current && videoRef.current) {
-      setup(gl, imageRef.current, videoRef.current, (x) => setEmbedding(JSON.stringify(x)))
+    const image = imageRef.current
+    const video = videoRef.current
+    if (gl && image && video) {
+      ;(async () => {
+        const camera = await useCamera()
+        console.log(video)
+        video.srcObject = camera
+        video.playsInline = true
+        video.muted = true
+        video.play()
+
+        setup(gl, image, video, (e) => setEmbedding(e))
+      })()
     }
-  }, [gl, videoRef])
+  }, [gl, imageRef, videoRef])
 
   return (
     <>
-      <img ref={imageRef} src={target} />
-
       <div
         style={{
           position: 'absolute',
@@ -244,7 +293,8 @@ const CameraCanvas = () => {
           overflow: 'hidden',
         }}
       >
-        <video ref={videoRef} />
+        <img ref={imageRef} src={target} />
+        <video controls ref={videoRef} />
       </div>
       <canvas width={512} height={512} ref={canvasRef} />
       <p>{embedding}</p>
