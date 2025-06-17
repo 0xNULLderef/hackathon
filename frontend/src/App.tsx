@@ -1,18 +1,16 @@
-import { useEffect } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router'
+import Test from './routes/Test'
 
 function App() {
-  useEffect(() => {
-    ;(async () => {
-      const cameraStream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: { width: 640, height: 480 },
-      })
-
-      console.log(cameraStream)
-    })()
-  }, [])
-
-  return <></>
+  return (
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/test" Component={Test} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  )
 }
 
 export default App
