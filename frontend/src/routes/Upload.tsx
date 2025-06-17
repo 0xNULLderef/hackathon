@@ -1,19 +1,20 @@
-import { useState } from "react";
+import { useState } from 'react'
 
 const Upload = () => {
-  const [value, setValue] = useState(0);
-  const [isSent, setIsSent] = useState(false);
+  const [value, setValue] = useState(0)
+  const [isSent, setIsSent] = useState(false)
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-850 text-black dark:text-white">
-
       <div className="flex flex-col items-center space-y-6">
         <input
           type="file"
           className="border border-gray-300 rounded-lg shadow-sm px-4 py-2 bg-white dark:bg-gray-800"
         />
 
-        <p className="text-white text-center">Skala dokładności zdjęcia: {value}</p>
+        <p className="text-white text-center">
+          Skala dokładności zdjęcia: {value}
+        </p>
 
         <input
           type="range"
@@ -32,10 +33,12 @@ const Upload = () => {
           Prześlij
         </button>
 
-        {isSent && <h4 className="text-green-500 text-center">Plik został przesłany!</h4>}
+        {isSent && (
+          <h4 className="text-green-500 text-center">Plik został przesłany!</h4>
+        )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Upload;
+export default Upload

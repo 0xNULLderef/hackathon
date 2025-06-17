@@ -1,23 +1,30 @@
-import { useState } from "react";
-import CameraComponent from "../components/CameraComponent";
+import { useState } from 'react'
+import CameraComponent from '../components/CameraComponent'
 
 const Play = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const imageData = JSON.parse(
     '{"src": "/src/asetts/IMG_20250617_121813889_HDR.jpg", "accuracy": "92%"}'
-  );
+  )
 
   return (
     <div className="flex min-h-screen bg-gray-850 text-white">
-
       <div className="hidden md:block w-64 bg-gray-900 p-6">
         <ul className="space-y-6 text-white pt-20">
-          <li><a href="/home">Strona główna</a></li>
-          <li><a href="/gallery">Znaleziska</a></li>
-          <li><a href="/ranking">Ranking</a></li>
-          <li><a href="/achievements">Osiągnięcia</a></li>
+          <li>
+            <a href="/home">Strona główna</a>
+          </li>
+          <li>
+            <a href="/gallery">Znaleziska</a>
+          </li>
+          <li>
+            <a href="/ranking">Ranking</a>
+          </li>
+          <li>
+            <a href="/achievements">Osiągnięcia</a>
+          </li>
         </ul>
       </div>
 
@@ -30,14 +37,22 @@ const Play = () => {
 
       <div
         className={`fixed top-0 left-0 h-full w-64 bg-gray-900 shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${
-          menuOpen ? "translate-x-0" : "-translate-x-full"
+          menuOpen ? 'translate-x-0' : '-translate-x-full'
         } md:hidden`}
       >
         <ul className="pt-20 ps-5 space-y-6 text-white">
-          <li><a href="/home">Strona główna</a></li>
-          <li><a href="/gallery">Znaleziska</a></li>
-          <li><a href="/ranking">Ranking</a></li>
-          <li><a href="/achievements">Osiągnięcia</a></li>
+          <li>
+            <a href="/home">Strona główna</a>
+          </li>
+          <li>
+            <a href="/gallery">Znaleziska</a>
+          </li>
+          <li>
+            <a href="/ranking">Ranking</a>
+          </li>
+          <li>
+            <a href="/achievements">Osiągnięcia</a>
+          </li>
         </ul>
       </div>
 
@@ -60,12 +75,10 @@ const Play = () => {
           Podgląd
         </button>
 
-        {isVisible && (
-          <h4 className="mt-4 text-lg text-gray-300"></h4>
-        )}
+        {isVisible && <h4 className="mt-4 text-lg text-gray-300"></h4>}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Play;
+export default Play
