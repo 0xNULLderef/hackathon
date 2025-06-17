@@ -1,30 +1,30 @@
 import { useState } from 'react'
 
-const Achievments = () => {
+const Home = () => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
 
   const data = [
     {
       index: 0,
-      src: '/src/asetts/first_find.png',
-      tytul: 'Pierwsze znalezisko',
-      czas: '17.06.2025, 12:17',
-      opis: 'Odnalazłeś pierwsze miejsce',
+      src: '/src/asetts/IMG_20250617_121752980_HDR.jpg',
+      tytul: 'Szkoła CKZIU Jaworzno',
+      ilosc_zdjęć: 5,
+      progres: '10%',
     },
     {
       index: 1,
-      src: '/src/asetts/three_find.png',
-      tytul: 'Początek kolekcji?',
-      czas: '17.06.2025, 12:17',
-      opis: 'Odkryłeś już 3 miejsca',
+      src: '/src/asetts/IMG_20250617_121813889_HDR.jpg',
+      tytul: 'Cekaziutek',
+      ilosc_zdjęć: 10,
+      progres: '50%',
     },
     {
       index: 2,
-      src: '/src/asetts/five_find.png',
-      tytul: 'Wysokie ambicje',
-      czas: '17.06.2025, 12:17',
-      opis: 'Odkryłeś już 5 miejsc',
+      src: '/src/asetts/IMG_20250617_121654925_HDR.jpg',
+      tytul: 'Elektrownia Jaworzno',
+      ilosc_zdjęć: 15,
+      progres: '90%',
     },
   ]
 
@@ -33,9 +33,6 @@ const Achievments = () => {
       <div className="hidden md:block w-64 bg-gray-900 p-6">
         <ul className="space-y-6 text-white pt-20">
           <li>
-            <a href="/home">Strona główna</a>
-          </li>
-          <li>
             <a href="/play">Obiektyw</a>
           </li>
           <li>
@@ -43,6 +40,9 @@ const Achievments = () => {
           </li>
           <li>
             <a href="/ranking">Ranking</a>
+          </li>
+          <li>
+            <a href="/achievments">Osiągnięcia</a>
           </li>
         </ul>
       </div>
@@ -61,7 +61,7 @@ const Achievments = () => {
       >
         <ul className="pt-20 ps-5 space-y-6 text-white">
           <li>
-            <a href="/home">Strona główna</a>
+            <a href="/play">Obiektyw</a>
           </li>
           <li>
             <a href="/gallery">Znaleziska</a>
@@ -70,13 +70,13 @@ const Achievments = () => {
             <a href="/ranking">Ranking</a>
           </li>
           <li>
-            <a href="/achievements">Osiągnięcia</a>
+            <a href="/achievments">Osiągnięcia</a>
           </li>
         </ul>
       </div>
 
       <div className="flex-1 p-4 flex flex-col items-center">
-        <h2 className="text-2xl font-bold mb-6 mt-10">Osiągnięcia</h2>
+        <h2 className="text-2xl font-bold mb-6 mt-10">Dostępne kolekcje</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {data.map((item) => (
@@ -92,18 +92,12 @@ const Achievments = () => {
                   }
                   className="w-full max-w-md rounded-lg shadow-md cursor-pointer"
                 />
-                {selectedIndex === item.index && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-3 rounded-lg shadow-md text-sm">
-                <button onClick={() => setSelectedIndex(null)} className="absolute top-2 right-2 text-white font-bold">
-                ✖
-                </button>
-                <p>{item.opis}</p>
-                </div>
-                )}
+                
               </div>
               <div className="absolute bottom-0 left-0 right-0 bg-opacity-60 text-white text-sm p-2 rounded-b-lg">
                 <p className="font-semibold">{item.tytul}</p>
-                <p>{item.czas}</p>
+                <p>Ilość zdjęć w kolekcji: {item.ilosc_zdjęć}</p>
+                <p>Stopień ukończenia kolekcji: {item.progres}</p>
               </div>
             </div>
           ))}
@@ -113,4 +107,4 @@ const Achievments = () => {
   )
 }
 
-export default Achievments
+export default Home
