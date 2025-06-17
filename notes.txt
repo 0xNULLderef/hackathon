@@ -1,0 +1,17 @@
+Tematy:
+- Wrzenie Miasta - projekt lokalny
+  - monitorowanie ruchu
+  - [ ] dollarstore geoguesser
+    - być w miejscu, zrobić zdjęcie???
+      - minimalny backend, daje zdjęcie
+      - porównywanie zdjęć? drogie
+      - czasowość?
+      - publikowanie przez inne osoby? robienie questów przez kogoś
+
+- Cyber Mjolnir
+  - mapy bezpieczeństwa
+  - system szybkiego monitorowania
+- Ghost School
+  - przeniesienie nauki poza mury szkoły
+  - edykacyjne gry, whatever
+  - wirtualne laboratorium
