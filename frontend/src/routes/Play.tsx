@@ -61,7 +61,7 @@ const Play = () => {
         </button>
 
         {isVisible && (
-          <h4 className="mt-4 text-lg text-gray-300">Treść podglądu...</h4>
+          <h4 className="mt-4 text-lg text-gray-300"></h4>
         )}
       </div>
     </div>
