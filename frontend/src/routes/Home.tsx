@@ -27,7 +27,7 @@ const Home = () => {
           menuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <ul className="p-14 space-y-6 text-white">
+        <ul className="pt-20 ps-5 space-y-6 text-white">
           <li><a href="/home" className="">Strona główna</a></li>
           <li><a href="/gallery" className="">Znaleziska</a></li>
           <li><a href="/ranking" className="">Ranking</a></li>
