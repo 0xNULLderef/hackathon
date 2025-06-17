@@ -18,3 +18,10 @@ Tematy:
 
 zdjęcia około 512 na 512
 przyciski zaokrąglone
+
+TODO:
+[ ] tylko wykonywać model co x ms
+[ ] backend prosty sqlite?? może albo po prostu array XD
+[/] worker thread
+[ ] 
+[ ] integracja z frontend rysia
