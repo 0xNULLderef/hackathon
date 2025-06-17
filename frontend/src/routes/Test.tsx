@@ -1,5 +1,11 @@
+import CameraCanvas from '../components/CameraCanvas'
+
 const Test = () => {
-  return <>hello, world!</>
+  return (
+    <>
+      <CameraCanvas />
+    </>
+  )
 }
 
 export default Test

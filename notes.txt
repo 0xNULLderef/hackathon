@@ -17,3 +17,9 @@ Tematy:
   - wirtualne laboratorium
 
 
+TODO:
+[ ] tylko wykonywać model co x ms
+[ ] backend prosty sqlite?? może albo po prostu array XD
+[/] worker thread
+[ ] 
+[ ] integracja z frontend rysia
