@@ -1,30 +1,27 @@
-# 📌 CityQuest Jaworzno/ PhotoQuest Jaworzno
+# 📌 CityQuest Jaworzno / PhotoQuest Jaworzno / JawoFoto Geussr / Jaworznicki FotoGeussr
 
-Krótki opis projektu, jego celu i przeznaczenia.
-Projekt ma na celu zmotywowania do wychodzenia na zewnątrz, nauki robienia zdjęć, integracji z innymi ludźmi, przebywania na otwartym powietrzu
+Projekt jest aplikacją webową, dedykowaną dla urządzeń mobilnych.
+Zadaniem uczestników jest odnaleźć miejsca z naszego miasta uwiecznione na obrazkach oraz wykonać jak najbardziej podobne zdjęcie, by zaliczyć odnalezienie lokalizacji. Forma konkurencji między mieszkańcami. 
 
 ## 👥 Autorzy
 
 - **Mateusz Rychel**
 - **Konrad Czerw**
 
+## 🎯 Cele projektu:
+
+Celem projektu jest to, aby zmotywować ludzi do poznawania różnych zakątków Jaworzna (tych najczęściej spotykanych jak i mało znanych)
+Poszerzanie wiedzy geograficznej o Jaworznie przez granie w grę
+
 ## 🚀 Funkcjonalności
 
-- autor aplikacji bądź użytkownicy dodają zdjęcia różnych miejsc w Jaworznie do aplikacji. Celem pozostałych użytkowników jest wykonanie zdjęcia, które w bardzo dużej części będzie identyczne jak to przesłane przez osobę trzecią. 
-- zdjęcie będzie weryfikowane przez 
-- możliwość dodawania własnych zdjęć (questów) dla znajomych i innych osób
-- questy czasowe (pojedyncze miejsca do odhaczenia lub kolekcja np. 5 zdjęć)
-- 
+- Funkcja "Obiektyw"
+- Galeria odnalezionych lokalizacji
+- Kolekcja zdobytych osiągnięć
+- Ranking mieszkańców
+- Podział na kolekcje lokalizacji do odkrycia
 
 ## 🔧 Możliwości rozwoju
 
-- Planowane rozszerzenia i nowe funkcjonalności.
-- Możliwe kierunki rozwoju i ulepszeń.
-
-## 🛠️ Instrukcja instalacji
-
-Jeśli projekt wymaga instalacji, dodaj tutaj instrukcję krok po kroku.
-
-1. Sklonuj repozytorium:  
-   ```bash
-   git clone https://github.com/TwojaNazwaUżytkownika/NazwaRepozytorium.git
+-
+- 
