@@ -12,7 +12,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/test" Component={Test} />
-          <Route path="/play" Component={Play} />
+          <Route path="/play/:questId" Component={Play} />
           <Route path="/upload" Component={Upload} />
           <Route path="/gallery" Component={Gallery} />
           <Route path="/ranking" Component={Ranking} />

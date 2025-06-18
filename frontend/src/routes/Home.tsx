@@ -81,7 +81,7 @@ const Home = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {data.map((item) => (
             <div key={item.index} className="relative">
-              <div className='flex'>
+              <div className="flex">
                 <img
                   src={item.src}
                   alt="Obraz"
@@ -92,7 +92,6 @@ const Home = () => {
                   }
                   className="w-full max-w-md rounded-lg shadow-md cursor-pointer"
                 />
-                
               </div>
               <div className="absolute bottom-0 left-0 right-0 bg-opacity-60 text-white text-sm p-2 rounded-b-lg">
                 <p className="font-semibold">{item.tytul}</p>

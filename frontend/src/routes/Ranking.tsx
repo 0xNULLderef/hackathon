@@ -4,16 +4,16 @@ const Ranking = () => {
   const [menuOpen, setMenuOpen] = useState(false)
 
   const users = [
-    { miejsce: 1, nazwa: "Jan Kowalski", odkrycia: 45 },
-    { miejsce: 2, nazwa: "Anna Nowak", odkrycia: 38 },
-    { miejsce: 3, nazwa: "Ty", odkrycia: 32 },
-    { miejsce: 4, nazwa: "Karolina Jankowska", odkrycia: 30 },
-    { miejsce: 5, nazwa: "Piotr Zieliński", odkrycia: 25 },
-    { miejsce: 6, nazwa: "Magdalena Kamińska", odkrycia: 21 },
-    { miejsce: 7, nazwa: "Tomasz Lewandowski", odkrycia: 18 },
+    { miejsce: 1, nazwa: 'Jan Kowalski', odkrycia: 45 },
+    { miejsce: 2, nazwa: 'Anna Nowak', odkrycia: 38 },
+    { miejsce: 3, nazwa: 'Ty', odkrycia: 32 },
+    { miejsce: 4, nazwa: 'Karolina Jankowska', odkrycia: 30 },
+    { miejsce: 5, nazwa: 'Piotr Zieliński', odkrycia: 25 },
+    { miejsce: 6, nazwa: 'Magdalena Kamińska', odkrycia: 21 },
+    { miejsce: 7, nazwa: 'Tomasz Lewandowski', odkrycia: 18 },
   ]
 
-  const mojeMiejsce = users.find((user) => user.nazwa === "Ty");
+  const mojeMiejsce = users.find((user) => user.nazwa === 'Ty')
 
   return (
     <div className="flex min-h-screen bg-gray-850 text-white">
@@ -80,7 +80,9 @@ const Ranking = () => {
                 <tr
                   key={user.miejsce}
                   className={`border-b border-gray-700 ${
-                    mojeMiejsce?.miejsce === user.miejsce ? "bg-blue-700 text-white font-bold" : "bg-gray-800"
+                    mojeMiejsce?.miejsce === user.miejsce
+                      ? 'bg-blue-700 text-white font-bold'
+                      : 'bg-gray-800'
                   }`}
                 >
                   <td className="p-4">{user.miejsce}</td>

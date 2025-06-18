@@ -5,7 +5,6 @@ const Gallery = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-850 text-white">
-
       <div className="hidden md:block w-64 bg-gray-900 p-6">
         <ul className="space-y-6 text-white pt-20">
           <li>
