@@ -10,12 +10,13 @@ router.get('/quests', (_, res) => {
       {
         id: number
         name: string
+        coverURL: string
         questImageCount: number
         questImageCompleteCount: number
       },
       []
     >(
-      'SELECT q.id, q.name, COUNT(qi.id) questImageCount, COUNT(qic.id) questImageCompleteCount FROM quests q LEFT JOIN quest_images qi ON qi.quest_id = q.id LEFT JOIN user_quest_images_completed qic ON qic.quest_image_id = qi.id GROUP BY q.id'
+      'SELECT q.id, q.name, q.cover_url coverURL, COUNT(qi.id) questImageCount, COUNT(qic.id) questImageCompleteCount FROM quests q LEFT JOIN quest_images qi ON qi.quest_id = q.id LEFT JOIN user_quest_images_completed qic ON qic.quest_image_id = qi.id GROUP BY q.id'
     )
   )
 })

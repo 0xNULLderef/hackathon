@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import CameraCanvas from '../components/CameraCanvas'
-import { useParams } from 'react-router'
+import { redirect, useNavigate, useParams } from 'react-router'
 import axios from 'axios'
 
 interface Resp {
@@ -12,18 +12,27 @@ interface Resp {
 
 const Play = () => {
   const { questId } = useParams()
+  const navigate = useNavigate()
 
   const [isVisible, setIsVisible] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showContinue, setShowContinue] = useState(false)
   const [similarity, setSimilarity] = useState(0.0)
   const [response, setResposne] = useState<Resp | null>(null)
 
-  const minSimilarity = 0.5
+  const staticBaseURL = import.meta.env.VITE_STATIC_BASE_URL
+
+  const minSimilarity = 0.6
 
   useEffect(() => {
     axios
-      .get<Resp>(`http://localhost:3000/api/quest_image_next/${questId}`)
-      .then((r) => setResposne(r.data))
+      .get<Resp>(`${import.meta.env.VITE_API_BASE_URL}/quest_image_next/${questId}`)
+      .then((r) => {
+        setResposne(r.data)
+        if(r.data.done) {
+          navigate('/home')
+        }
+      })
   }, [])
 
   return (
@@ -63,9 +72,9 @@ const Play = () => {
 
           {}
           <div className="relative w-full max-w-md mt-4">
-            {!isVisible ? (
+            {showContinue ? (<div className='flex items-center justify-center' style={{ height: '512px' }}><p>Znalazłeś {response.name}!</p></div>) : (!isVisible ? (
               <img
-                src={response.url}
+                src={`${staticBaseURL}/${response.url}`}
                 alt="Obraz"
                 className="w-full rounded-lg shadow-md"
               />
@@ -73,11 +82,13 @@ const Play = () => {
               <>
                 <CameraCanvas
                   className="w-full rounded-lg shadow-md overflow-hidden"
-                  targetURL={response.url}
+                  targetURL={`${staticBaseURL}/${response.url}`}
                   onSimilarityUpdate={(similarity) => setSimilarity(similarity)}
                   onCheckShouldStop={(similarity) => {
                     if (similarity >= minSimilarity) {
                       // set the flag here...
+                      setShowContinue(true)
+                      axios.get(`${import.meta.env.VITE_API_BASE_URL}/quest_image_mark/${response.id}`)
                       return true
                     } else {
                       return false
@@ -85,21 +96,28 @@ const Play = () => {
                   }}
                 />
                 <div className="absolute top-4 left-4 bg-black/30 text-white text-sm px-2 py-1 rounded">
-                  <div>Dokładność: {Math.round(similarity * 100)}%</div>
+                  <div>Dokładność: {Math.round(Math.max(similarity, 0) * 100)}%</div>
                   <div>
                     Minimalna wymagana: {Math.round(minSimilarity * 100)}%
                   </div>
                 </div>
               </>
-            )}
+            ))}
           </div>
 
-          {}
           <button
             onClick={() => setIsVisible((prevIsVisible) => !prevIsVisible)}
             className="w-full max-w-md py-2 mt-4 bg-gray-800 rounded"
+            style={{ display: showContinue ? 'none' : 'unset' }}
           >
             {isVisible ? 'Podgląd' : 'Szukaj'}
+          </button>
+          <button
+            onClick={() => { /* HACKHACK */ window.location.reload() }}
+            className="w-full max-w-md py-2 mt-4 bg-gray-800 rounded"
+            style={{ display: !showContinue ? 'none' : 'unset' }}
+          >
+            Kontynuuj
           </button>
         </div>
       )}

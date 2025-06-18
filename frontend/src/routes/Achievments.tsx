@@ -4,24 +4,26 @@ const Achievments = () => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
 
+  const staticBaseURL = import.meta.env.VITE_STATIC_BASE_URL
+
   const data = [
     {
       index: 0,
-      src: '/src/asetts/first_find.png',
+      src: 'first_find.png',
       tytul: 'Pierwsze znalezisko',
       czas: '17.06.2025, 12:17',
       opis: 'Odnalazłeś pierwsze miejsce',
     },
     {
       index: 1,
-      src: '/src/asetts/three_find.png',
+      src: 'three_find.png',
       tytul: 'Początek kolekcji?',
       czas: '17.06.2025, 12:17',
       opis: 'Odkryłeś już 3 miejsca',
     },
     {
       index: 2,
-      src: '/src/asetts/five_find.png',
+      src: 'five_find.png',
       tytul: 'Wysokie ambicje',
       czas: '17.06.2025, 12:17',
       opis: 'Odkryłeś już 5 miejsc',
@@ -83,7 +85,7 @@ const Achievments = () => {
             <div key={item.index} className="relative">
               <div className="flex">
                 <img
-                  src={item.src}
+                  src={`${staticBaseURL}/${item.src}`}
                   alt="Obraz"
                   onClick={() =>
                     setSelectedIndex(

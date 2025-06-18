@@ -2,7 +2,8 @@
 
 CREATE TABLE quests (
     id INTEGER PRIMARY KEY NOT NULL,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    cover_url TEXT NOT NULL
 );
 
 CREATE TABLE quest_images (
@@ -48,9 +49,9 @@ CREATE TABLE user_achievements (
 
 -- data
 
-INSERT INTO quests (id, name) VALUES (1, 'Quest 1');
-INSERT INTO quests (id, name) VALUES (2, 'Quest 2');
-INSERT INTO quests (id, name) VALUES (3, 'Quest 3');
+INSERT INTO quests (id, name, cover_url) VALUES (1, 'CKZiU Jaworzno', 'IMG_20250617_121752980_HDR.jpg');
+INSERT INTO quests (id, name, cover_url) VALUES (2, 'Cekaziutek', 'IMG_20250617_121813889_HDR.jpg');
+INSERT INTO quests (id, name, cover_url) VALUES (3, 'Elektrownia III Jaworzno', 'IMG_20250617_121654925_HDR.jpg');
 
 INSERT INTO quest_images (id, name, url, quest_id) VALUES (1, 'Rura', 'IMG_20250617_121625927_HDR.jpg', 1);
 INSERT INTO quest_images (id, name, url, quest_id) VALUES (2, 'Budynek', 'IMG_20250617_121654925_HDR.jpg', 1);
